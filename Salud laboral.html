@@ -1,0 +1,1584 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Integral de Salud Laboral</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- SheetJS (xlsx) for Excel export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            body { 
+                background: white !important; 
+                color: black !important;
+                font-size: 11pt !important;
+            }
+            main {
+                max-width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .print-break { page-break-before: always; }
+            .shadow-sm, .shadow-md, shadow { box-shadow: none !important; box-shadow: none !important; }
+            .border { border-color: #cbd5e1 !important; }
+            input, select, textarea {
+                border: none !important;
+                background: transparent !important;
+                appearance: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Header / Navbar -->
+    <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-teal-500 p-2 rounded-lg text-slate-900">
+                    <i data-lucide="activity" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">Sistema Integral de Salud Laboral</h1>
+                    <p class="text-xs text-slate-400">Seguimiento Territorial 116 Municipios - Cundinamarca</p>
+                </div>
+            </div>
+
+            <!-- Global Controls / Selector de Municipio y Perfil -->
+            <div class="flex items-center space-x-4">
+                <div class="flex flex-col">
+                    <label class="text-[10px] text-slate-400 uppercase font-semibold">Provincia</label>
+                    <select id="provinciaSelect" onchange="cargarMunicipios()" class="bg-slate-800 border border-slate-700 text-white text-xs rounded px-2 py-1 focus:outline-none focus:border-teal-500">
+                        <!-- Carga dinámica -->
+                    </select>
+                </div>
+
+                <div class="flex flex-col">
+                    <label class="text-[10px] text-slate-400 uppercase font-semibold">Municipio (116)</label>
+                   <select id ="municipioSelect" onchange="actualizarReporte()" class="bg-slate-800 border border-slate-700 text-white text-xs rounded px-2 py-1 focus:outline-none focus:border-teal-500">
+                        <!-- Carga dinámica -->
+                    </select>
+                </div>
+
+                <div class="flex flex-col">
+                    <label class="text-[10px] text-slate-400 uppercase font-semibold">Perfil Referente</label>
+                    <select id="perfilSelect" onchange="actualizarReporte()" class="bg-slate-800 border border-slate-700 text-white text-xs rounded px-2 py-1 focus:outline-none focus:border-teal-500">
+                        <option value="Profesional SST">Profesional en SST</option>
+                        <option value="Auxiliar Enfermería">Auxiliar de Enfermería</option>
+                        <option value="Técnico/Tecnólogo SST">Técnico/Tecnólogo SST</option>
+                    </select>
+                </div>
+<button
+    onclick="mostrarNuevaActividad()"
+    class="bg-teal-600 hover:bg-teal-700 text-white text-sm px-3 py-2 rounded-md flex items-center gap-2"
+>
+    <i data-lucide="plus" class="w-4 h-4"></i>
+    Nueva
+</button>
+                <button onclick="exportarExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded text-xs font-semibold flex items-center space-x-1 transition shadow">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                    <span>Exportar Excel</span>
+                </button>
+
+                <button type="button" onclick="imprimirReportePDF()" class="bg-teal-600 hover:bg-teal-500 text-white px-3 py-1.5 rounded text-xs font-semibold flex items-center space-x-1 transition shadow cursor-pointer">
+                    <i data-lucide="printer" class="w-4 h-4"></i>
+                    <span>Imprimir / PDF</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="bg-white border-b border-slate-200 shadow-sm no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-8">
+            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-medium py-3 px-1 text-sm flex items-center space-x-2">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                <span>Dashboard Ejecutivo</span>
+            </button>
+            <button onclick="switchTab('checklist')" id="tab-checklist" class="tab-btn active border-b-2 border-teal-600 text-teal-600 font-semibold py-3 px-1 text-sm flex items-center space-x-2">
+                <i data-lucide="check-square" class="w-4 h-4"></i>
+                <span>Matriz Checklist de Seguimiento</span>
+            </button>
+            <button onclick="switchTab('informe')" id="tab-informe" class="tab-btn border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-medium py-3 px-1 text-sm flex items-center space-x-2">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                <span>Informe de Análisis Estadístico & Firmas</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+
+        <!-- TAB 1: DASHBOARD EJECUTIVO -->
+        <section id="content-dashboard" class="space-y-6 hidden">
+            <!-- Summary KPI Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase">Avance General (Programadas)</p>
+                        <h3 id="kpi-avance-general" class="text-2xl font-bold text-slate-800 mt-1">0%</h3>
+                        <p class="text-[11px] text-slate-500 mt-1"><span id="kpi-compl-count">0</span> de <span id="kpi-prog-count">0</span> Actividades</p>
+                    </div>
+                    <div class="bg-teal-50 p-3 rounded-lg text-teal-600">
+                        <i data-lucide="check-circle-2" class="w-8 h-8"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase">Población Intervenida</p>
+                        <h3 id="kpi-poblacion-total" class="text-2xl font-bold text-slate-800 mt-1">0</h3>
+                        <p class="text-[11px] text-slate-500 mt-1">Meta: <span id="kpi-poblacion-meta">0</span> pers. (<span id="kpi-poblacion-cobertura">0%</span>)</p>
+                    </div>
+                    <div class="bg-indigo-50 p-3 rounded-lg text-indigo-600">
+                        <i data-lucide="users" class="w-8 h-8"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase">Actividades Programadas</p>
+                        <h3 id="kpi-actividades-programadas" class="text-2xl font-bold text-slate-800 mt-1">0 / 17</h3>
+                        <p class="text-[11px] text-slate-500 mt-1"><span id="kpi-no-programadas">0</span> Excluidas (No Aplica)</p>
+                    </div>
+                    <div class="bg-amber-50 p-3 rounded-lg text-amber-600">
+                        <i data-lucide="calendar-check" class="w-8 h-8"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase">Alertas de Ejecución</p>
+                        <h3 id="kpi-alertas-count" class="text-2xl font-bold text-amber-600 mt-1">0</h3>
+                        <p class="text-[11px] text-slate-500 mt-1">En proceso o pendientes</p>
+                    </div>
+                    <div class="bg-rose-50 p-3 rounded-lg text-rose-600">
+                        <i data-lucide="alert-triangle" class="w-8 h-8"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Doughnut Chart: Estado de Actividades -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <h4 class="text-sm font-bold text-slate-700 mb-4 flex items-center space-x-2">
+                        <i data-lucide="pie-chart" class="w-4 h-4 text-teal-600"></i>
+                        <span>Estado de Actividades Programadas</span>
+                    </h4>
+                    <div class="relative w-full h-64 flex items-center justify-center">
+                        <canvas id="chartEstado"></canvas>
+                    </div>
+                </div>
+
+                <!-- Bar Chart: Cumplimiento por Área Estratégica -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm lg:col-span-2 flex flex-col justify-between">
+                    <h4 class="text-sm font-bold text-slate-700 mb-4 flex items-center space-x-2">
+                        <i data-lucide="bar-chart-3" class="w-4 h-4 text-teal-600"></i>
+                        <span>Avance por Área Estratégica (%)</span>
+                    </h4>
+                    <div class="relative w-full h-64">
+                        <canvas id="chartAreas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: MATRIZ CHECKLIST DE SEGUIMIENTO -->
+        <section id="content-checklist" class="space-y-4">
+            <!-- Filter Bar -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4 no-print">
+                <div class="flex items-center space-x-3">
+                    <span class="text-xs font-bold text-slate-500 uppercase flex items-center space-x-1">
+                        <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                        <span>Filtros:</span>
+                    </span>
+                    <select id="filterProgramada" onchange="renderChecklistTable()" class="bg-slate-50 border border-slate-300 text-xs rounded px-2.5 py-1.5 focus:ring-teal-500 focus:border-teal-500">
+                        <option value="TODAS">Programación: TODAS</option>
+                        <option value="SI">Solo Programadas (SÍ)</option>
+                        <option value="NO">No Programadas (NO)</option>
+                    </select>
+                    <select id="filterTrimestre" onchange="renderChecklistTable()" class="bg-slate-50 border border-slate-300 text-xs rounded px-2.5 py-1.5 focus:ring-teal-500 focus:border-teal-500">
+                        <option value="TODOS">Trimestre: TODOS</option>
+                        <option value="Q1">Q1 (Ene-Mar)</option>
+                        <option value="Q2">Q2 (Abr-Jun)</option>
+                        <option value="Q3">Q3 (Jul-Sep)</option>
+                        <option value="Q4">Q4 (Oct-Dic)</option>
+                    </select>
+                    <select id="filterEstado" onchange="renderChecklistTable()" class="bg-slate-50 border border-slate-300 text-xs rounded px-2.5 py-1.5 focus:ring-teal-500 focus:border-teal-500">
+                        <option value="TODOS">Estado: TODOS</option>
+                        <option value="Completado">Completado</option>
+                        <option value="En Proceso">En Proceso</option>
+                        <option value="No Iniciado">No Iniciado</option>
+                        <option value="No Aplica">No Aplica</option>
+                    </select>
+                </div>
+</div>
+
+<!-- Tabla -->
+<div class="overflow-x-auto">
+                <div class="text-xs text-slate-400 italic">
+                    Cronograma por Trimestres (Q1-Q4), observaciones y compromisos para el próximo seguimiento.
+                </div>
+            </div>
+
+            <!-- Table Container -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-900 text-white uppercase text-[10px] tracking-wider font-bold">
+                                <th class="p-3 w-8 text-center">#</th>
+                                <th class="p-3 min-w-[180px]">Área / Actividad</th>
+                                <th class="p-3 text-center w-20">¿Prog?</th>
+                                <th class="p-3 text-center w-20">Trimestre</th>
+                                <th class="p-3 text-center w-28">Fecha Límite</th>
+                                <th class="p-3 text-center w-14">Meta</th>
+                                <th class="p-3 text-center w-14">Ejec.</th>
+                                <th class="p-3 text-center w-14">% Av.</th>
+                                <th class="p-3 text-center w-24">Estado</th>
+                                <th class="p-3 text-center w-14">Pob. Meta</th>
+                                <th class="p-3 text-center w-14">Pob. Int.</th>
+                                <th class="p-3 text-center w-14">% Cob.</th>
+                                <th class="p-3 min-w-[180px]">Observaciones</th>
+                                <th class="p-3 min-w-[200px]">Plan de Mejora / Compromisos</th>
+                                <th class="p-3 text-center w-28">Evidencias</th>
+                            </tr>
+                        </thead>
+                        <tbody id="checklistTableBody" class="divide-y divide-slate-100 bg-white">
+                            <!-- Rows loaded dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: INFORME DE ANÁLISIS DE DATOS, AUDITORÍA Y FIRMAS -->
+        <section id="content-informe" class="space-y-6 hidden">
+            <!-- Header Informe -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <span class="inline-block bg-teal-100 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded uppercase mb-1">Acta Técnica de Verificación Territorial</span>
+                    <h2 class="text-xl font-bold text-slate-900">Análisis Estadístico Automatizado y Responsables Técnicos</h2>
+                    <p class="text-xs text-slate-500 mt-1">Sintetizador automático de hallazgos cuantitativos y cualitativos por actividad SST.</p>
+                </div>
+                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-right">
+                    <p class="text-[10px] text-slate-400 uppercase font-semibold">Provincia & Municipio</p>
+                    <p id="informeMunicipioNombre" class="text-sm font-bold text-teal-700">Facatativá (Sabana Occidente)</p>
+                    <p id="informePerfil" class="text-[10px] text-slate-500 font-medium">Perfil: Profesional SST</p>
+                    <p id="informeFecha" class="text-[10px] text-slate-400 mt-0.5"></p>
+                </div>
+            </div>
+
+            <!-- Datos de los Referentes (Municipal y Departamental) -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-2 border-b border-slate-100 pb-2">
+                    <i data-lucide="user-check" class="w-4 h-4 text-teal-600"></i>
+                    <span>Datos de los Referentes a Cargo del Municipio</span>
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Referente Municipal -->
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-3">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="building-2" class="w-4 h-4 text-teal-600"></i>
+                            <h4 class="font-bold text-xs text-slate-800 uppercase">Referente del Municipio</h4>
+                        </div>
+                        <div class="space-y-2 text-xs">
+                            <div>
+                                <label class="block text-[10px] font-semibold text-slate-500 uppercase">Nombre Completo</label>
+                                <input type="text" id="refMunNombre" value="Dra. María Fernanda López" oninput="guardarDatosReferentes()" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 focus:ring-teal-500 text-xs">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] font-semibold text-slate-500 uppercase">Cargo / Perfil</label>
+                                    <input type="text" id="refMunCargo" value="Coordinadora SST Municipal" oninput="guardarDatosReferentes()" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 focus:ring-teal-500 text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-semibold text-slate-500 uppercase">Teléfono / Celular</label>
+                                    <input type="text" id="refMunTel" value="310 987 6543" oninput="guardarDatosReferentes()" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 focus:ring-teal-500 text-xs">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-semibold text-slate-500 uppercase">Correo Electrónico</label>
+                                <input type="email" id="refMunEmail" value="saludocupacional@facatativa-cundinamarca.gov.co" oninput="guardarDatosReferentes()" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 focus:ring-teal-500 text-xs">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Referente Departamental -->
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-3">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="shield-check" class="w-4 h-4 text-indigo-600"></i>
+                            <h4 class="font-bold text-xs text-slate-800 uppercase">Referente del Departamento (Gobernación / Subred)</h4>
+                        </div>
+                        <div class="space-y-2 text-xs">
+                            <div>
+                                <label class="block text-[10px] font-semibold text-slate-500 uppercase">Nombre Completo</label>
+                                <input type="text" id="refDepNombre" value="Ing. Carlos Eduardo Ramírez" oninput="guardarDatosReferentes()" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 focus:ring-teal-500 text-xs">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] font-semibold text-slate-500 uppercase">Entidad / Subred</label>
+                                    <input type="text" id="refDepEntidad" value="Secretaría de Salud - Cundinamarca" oninput="guardarDatosReferentes()" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 focus:ring-teal-500 text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-semibold text-slate-500 uppercase">Teléfono Contacto</label>
+                                    <input type="text" id="refDepTel" value="320 123 4567" oninput="guardarDatosReferentes()" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 focus:ring-teal-500 text-xs">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-semibold text-slate-500 uppercase">Correo Institucional</label>
+                                <input type="email" id="refDepEmail" value="carlos.ramirez@cundinamarca.gov.co" oninput="guardarDatosReferentes()" class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 focus:ring-teal-500 text-xs">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen Ejecutivo del Informe -->
+            <div class="bg-slate-900 text-white p-6 rounded-xl shadow-md">
+                <h3 class="text-sm font-bold text-teal-400 uppercase tracking-wider mb-2 flex items-center space-x-2">
+                    <i data-lucide="file-check-2" class="w-4 h-4"></i>
+                    <span>Resumen Ejecutivo Consolidado del Municipio</span>
+                </h3>
+                <p id="informeResumenTexto" class="text-xs text-slate-300 leading-relaxed">
+                    Cargando resumen de datos...
+                </p>
+            </div>
+
+            <!-- Contenedor Descriptivo y Estadístico Actividad por Actividad -->
+            <div id="contenedorDescriptivoActividades" class="space-y-6">
+                <!-- Se genera dinámicamente -->
+            </div>
+
+            <!-- Módulo de Firmas Digitales -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4 print-break">
+                <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-2 border-b border-slate-100 pb-2">
+                    <i data-lucide="pen-tool" class="w-4 h-4 text-teal-600"></i>
+                    <span>Firmas Digitales de Conformidad de la Asistencia Técnica</span>
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Firma Municipio -->
+                    <div class="space-y-2 text-center">
+                        <p class="text-xs font-bold text-slate-700">Firma Referente Municipal</p>
+                        <div class="border border-slate-300 rounded-lg bg-slate-50 relative h-32 flex items-center justify-center overflow-hidden">
+                            <canvas id="canvasFirmaMun" width="350" height="120" class="w-full h-full cursor-crosshair bg-transparent"></canvas>
+                        </div>
+                        <div class="flex justify-between items-center no-print">
+                            <span class="text-[10px] text-slate-400">Dibuje con mouse o pantalla táctil</span>
+                            <button onclick="limpiarFirma('Mun')" class="text-[11px] text-rose-600 hover:underline font-semibold">Limpiar Firma</button>
+                        </div>
+                        <div class="text-[11px] text-slate-600 border-t border-slate-200 pt-1 mt-2">
+                            <p class="font-bold" id="labelFirmaMunNombre">Dra. María Fernanda López</p>
+                            <p id="labelFirmaMunCargo" class="text-slate-400">Coordinadora SST Municipal</p>
+                        </div>
+                    </div>
+
+                    <!-- Firma Departamento -->
+                    <div class="space-y-2 text-center">
+                        <p class="text-xs font-bold text-slate-700">Firma Referente Departamental</p>
+                        <div class="border border-slate-300 rounded-lg bg-slate-50 relative h-32 flex items-center justify-center overflow-hidden">
+                            <canvas id="canvasFirmaDep" width="350" height="120" class="w-full h-full cursor-crosshair bg-transparent"></canvas>
+                        </div>
+                        <div class="flex justify-between items-center no-print">
+                            <span class="text-[10px] text-slate-400">Dibuje con mouse o pantalla táctil</span>
+                            <button onclick="limpiarFirma('Dep')" class="text-[11px] text-rose-600 hover:underline font-semibold">Limpiar Firma</button>
+                        </div>
+                        <div class="text-[11px] text-slate-600 border-t border-slate-200 pt-1 mt-2">
+                            <p class="font-bold" id="labelFirmaDepNombre">Ing. Carlos Eduardo Ramírez</p>
+                            <p id="labelFirmaDepEntidad" class="text-slate-400">Secretaría de Salud - Cundinamarca</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Script Logic -->
+      <script type="module"></script>
+async function probarMunicipioReal(
+    
+   <script >
+    
+        // Estructura oficial de las 15 Provincias y los 116 Municipios de Cundinamarca
+        const provinciasCundinamarca = {
+            "Sabana Occidente": ["Facatativá", "Bojacá", "Cachipay", "El Rosal", "Funza", "Madrid", "Mosquera", "Subachoque", "Zipacón"],
+            "Sabana Centro": ["Chía", "Cajicá", "Cogua", "Gachancipá", "Sopó", "Tabio", "Tenjo", "Tocancipá", "Zipaquirá"],
+            "Soacha": ["Soacha", "Sibbate"],
+            "Sumapaz": ["Fusagasugá", "Arbeláez", "Cabrera", "Granada", "Pandis", "Pasca", "San Bernardo", "Silvania", "Tibacuy", "Venecia"],
+            "Tequendama": ["Anapoima", "Anolaima", "El Colegio", "La Mesa", "Apulo", "Quipile", "San Antonio del Tequendama", "Tena", "Viotá"],
+            "Alto Magdalena": ["Girardot", "Agua de Dios", "Guataquí", "Jerusalén", "Nariño", "Nilo", "Ricaurte", "Tocaima"],
+            "Gualivá": ["Albán", "La Peña", "La Vega", "Nimaima", "Nocaima", "Quebradanegra", "San Francisco", "Sasaima", "Supatá", "Útica", "Vergara", "Villeta"],
+            "Guavio": ["Gachalá", "Gachetá", "Gama", "Guasca", "Guatavita", "Junín", "Ubalá", "Ubalá Norte"],
+            "Almeidas": ["Chocontá", "Machetá", "Manta", "Suesca", "Tibirita", "Villapinzón"],
+            "Ubaté": ["Ubaté", "Cucunubá", "Fúquene", "Guachetá", "Lenguazaque", "Carmen de Carupa", "Susa", "Sutatausa", "Tausa", "Simijaca"],
+            "Medina": ["Medina", "Paratebueno"],
+            "Réquira / Oriente": ["Cáqueza", "Chipaque", "Choachí", "Fómeque", "Fosca", "Guayabetal", "Gutiérrez", "Quetame", "Ubaque", "Une"],
+            "Magdalena Centro": ["Beltrán", "Bituima", "Chaguaní", "Guayabal de Síquima", "Puli", "Vianí"],
+            "Bajo Magdalena": ["Caparrapí", "Guaduas", "Puerto Salgar"],
+            "Rionegro": ["Pacho", "El Peñón", "La Palma", "Paime", "San Cayetano", "Topaipí", "Villagómez", "Yacopí"]
+        };
+
+        // Data structure for the 17 territorial SST activities with Trimestres and Fechas Límite 
+        
+        let actividadesData = [
+            {
+                
+                id: 1,
+                area: "1. Deberes y Derechos",
+                actividad: "Talleres y recorridos en focos de economía informal",
+                impactoTema: "la intervención y sensibilización en formalización laboral y aseguramiento en salud para la economía informal",
+                descripcionTecnica: "Mapeo y georreferenciación de focos de economía informal en plazas de mercado, puntos de reciclaje y acopios agrícolas. Sensibilización directa en los derechos y deberes del SGSSS en el marco de la Ley 1562 de 2012.",
+                entregable: "Listados de asistencia firmados, registro fotográfico y matriz georreferenciada de focos informales.",
+                programada: "SI",
+                trimestre: "Q1",
+                fechaLimite: "2026-03-31",
+                metaProg: 4,
+                actEjec: 4,
+                pobMeta: 200,
+                pobInterv: 200,
+                estado: "Completado",
+                observaciones: "Actividad culminada con éxito en la plaza de mercado municipal y sector transportadores.",
+                compromisos: "Mantener el censo actualizado de vendedores informales para el próximo trimestre.",
+                archivos: []
+            },
+            {
+                id: 2,
+                area: "1. Deberes y Derechos",
+                actividad: "Aplicación de herramienta tipo Semáforo",
+                impactoTema: "la autoevaluación ágil del nivel de riesgo en los puestos de trabajo informales para priorizar controles",
+                descripcionTecnica: "Valoración rápida del riesgo en puestos de trabajo informales mediante fichas sencillas de autoevaluación semaforizada (Rojo, Amarillo, Verde).",
+                entregable: "Fichas de caracterización semáforo diligenciadas por sector de trabajo.",
+                programada: "SI",
+                trimestre: "Q1",
+                fechaLimite: "2026-03-31",
+                metaProg: 8,
+                actEjec: 8,
+                pobMeta: 150,
+                pobInterv: 150,
+                estado: "Completado",
+                observaciones: "Se aplicaron 8 fichas en talleres mecánicos y carpinterías locales.",
+                compromisos: "Sistematizar la matriz de riesgos en Excel para entregar consolidado a la Subred.",
+                archivos: []
+            },
+            {
+                id: 3,
+                area: "1. Deberes y Derechos",
+                actividad: "Estrategias de comunicación masiva en SST",
+                impactoTema: "la apropiación social de conceptos de prevención de riesgos a través de medios de difusión local",
+                descripcionTecnica: "Emisión de cuñas pedagógicas en emisoras comunitarias e instalación de material impreso (afiches y plegables) en la Alcaldía, E.S.E. y puntos de alta afluencia.",
+                entregable: "Certificación de emisión radial comunitaria y registro fotográfico de material fijado.",
+                programada: "SI",
+                trimestre: "Q2",
+                fechaLimite: "2026-06-30",
+                metaProg: 2,
+                actEjec: 2,
+                pobMeta: 300,
+                pobInterv: 315,
+                estado: "Completado",
+                observaciones: "Emisión continua durante un mes por la emisora comunitaria municipal.",
+                compromisos: "Diseñar plegables digitales para difundir en redes sociales institucionales de la Alcaldía.",
+                archivos: []
+            },
+            {
+                id: 4,
+                area: "1. Deberes y Derechos",
+                actividad: "Divulgación de la Ruta y Flujograma ATEL",
+                impactoTema: "la clarificación del conducto de atención ante Accidentes de Trabajo y Enfermedades Laborales en la red pública",
+                descripcionTecnica: "Socialización del flujo de atención para casos de Accidentes de Trabajo y Enfermedades Laborales adaptado a los servicios de la red pública de salud para trabajadores sin ARL.",
+                entregable: "Flujograma municipal de atención ATEL adoptado y actas de socialización a la comunidad.",
+                programada: "SI",
+                trimestre: "Q2",
+                fechaLimite: "2026-06-30",
+                metaProg: 2,
+                actEjec: 2,
+                pobMeta: 80,
+                pobInterv: 85,
+                estado: "Completado",
+                observaciones: "Socialización realizada con personal de urgencias del Hospital local y líderes de la comunidad.",
+                compromisos: "Publicar el flujograma en la cartelera principal del servicio de urgencias.",
+                archivos: []
+            },
+            {
+                id: 5,
+                area: "1. Deberes y Derechos",
+                actividad: "Sensibilización en afiliación al SGSSS e inclusión digna",
+                impactoTema: "el fomento de la afiliación voluntaria a la seguridad social y el incentivo a la formalización con microempresarios",
+                descripcionTecnica: "Reuniones con comerciantes e informales para promover la vinculación a la seguridad social y sensibilizar a empleadores formales sobre beneficios tributarios.",
+                entregable: "Actas de concertación con el sector empresarial y registros de orientación en seguridad social.",
+                programada: "SI",
+                trimestre: "Q3",
+                fechaLimite: "2026-09-30",
+                metaProg: 2,
+                actEjec: 1,
+                pobMeta: 60,
+                pobInterv: 40,
+                estado: "En Proceso",
+                observaciones: "Se realizó el primer encuentro con la Asociación de Comerciantes. Pendiente segunda fecha.",
+                compromisos: "Gestionar con la Secretaría de Desarrollo Económico una feria de formalización laboral en el próximo trimestre.",
+                archivos: []
+            },
+            {
+                id: 6,
+                area: "2. Estilos de Vida y Entornos",
+                actividad: "Plan de capacitación adaptado (4 Módulos de Riesgo)",
+                impactoTema: "el fortalecimiento de competencias operativas en la prevención de riesgos ergonómicos, auditivos, psicosociales y químicos",
+                descripcionTecnica: "Capacitaciones cortas dirigidas a la economía popular en 4 frentes: Riesgo Biomecánico, Auditivo, Psicosocial y manejo de Agentes Cancerígenos.",
+                entregable: "Memorias técnicas, presentaciones y planillas de asistencia desagregadas por módulo.",
+                programada: "SI",
+                trimestre: "Q2",
+                fechaLimite: "2026-06-30",
+                metaProg: 4,
+                actEjec: 3,
+                pobMeta: 100,
+                pobInterv: 75,
+                estado: "En Proceso",
+                observaciones: "Ejecutados módulos de Riesgo Biomecánico, Auditivo y Psicosocial. Falta el módulo de Agentes Cancerígenos.",
+                compromisos: "Programar antes del fin de mes el módulo 4 enfocado en manejo seguro de sustancias químicas con pintores y latoneros.",
+                archivos: []
+            },
+            {
+                id: 7,
+                area: "2. Estilos de Vida y Entornos",
+                actividad: "Implementación de estrategias de hábitos saludables",
+                impactoTema: "la promoción del bienestar físico, descanso activo e hidratación en las jornadas diarias de la economía popular",
+                descripcionTecnica: "Jornadas prácticas de pausas activas grupales, hábitos de hidratación y nutrición adecuada en los puestos de trabajo informales.",
+                entregable: "Registros fotográficos y planillas de control de asistencia a pausas saludables.",
+                programada: "SI",
+                trimestre: "Q1",
+                fechaLimite: "2026-03-31",
+                metaProg: 6,
+                actEjec: 6,
+                pobMeta: 150,
+                pobInterv: 160,
+                estado: "Completado",
+                observaciones: "Excelente receptividad en el sector de la galería y plazas de mercado.",
+                compromisos: "Entrenar a 2 líderes de la plaza de mercado para realizar pausas activas diarias de manera autónoma.",
+                archivos: []
+            },
+            {
+                id: 8,
+                area: "2. Estilos de Vida y Entornos",
+                actividad: "Caracterización SURVEY123 y validación ADRES",
+                impactoTema: "el diagnóstico socio-demográfico estandarizado y el cruce del estado real de afiliación en salud de los trabajadores",
+                descripcionTecnica: "Encuestas digitales en terreno sobre unidades informales mediante la aplicación SURVEY123 y posterior verificación de la condición de aseguramiento en la base de ADRES.",
+                entregable: "Base de datos consolidada exportada de SURVEY123 y reporte de validación en ADRES.",
+                programada: "SI",
+                trimestre: "Q1",
+                fechaLimite: "2026-03-31",
+                metaProg: 1,
+                actEjec: 1,
+                pobMeta: 120,
+                pobInterv: 120,
+                estado: "Completado",
+                observaciones: "Base de datos sincronizada al 100% con la Secretaría de Salud Departamental.",
+                compromisos: "Realizar cruce de información con aseguramiento municipal para afiliar a 15 personas no aseguradas detectadas.",
+                archivos: []
+            },
+            {
+                id: 9,
+                area: "2. Estilos de Vida y Entornos",
+                actividad: "Análisis de Puestos de Trabajo (APT) priorizados",
+                impactoTema: "la identificación técnica directa de factores biomecánicos y ambientales en oficios críticos de alta exigencia física",
+                descripcionTecnica: "Evaluación técnica de las condiciones ergonómicas y peligros en sectores informales priorizados (carpinterías, modisterías, plazas de mercado).",
+                entregable: "Informes técnicos de Análisis de Puestos de Trabajo firmados con recomendaciones.",
+                programada: "SI",
+                trimestre: "Q3",
+                fechaLimite: "2026-09-30",
+                metaProg: 3,
+                actEjec: 2,
+                pobMeta: 15,
+                pobInterv: 10,
+                estado: "En Proceso",
+                observaciones: "Realizados 2 APT en carpinterías locales. Pendiente 1 APT en el sector de coteros y cargadores.",
+                compromisos: "Entregar el informe técnico con recomendaciones ergonómicas a los propietarios de los talleres intervenidos.",
+                archivos: []
+            },
+            {
+                id: 10,
+                area: "2. Estilos de Vida y Entornos",
+                actividad: "Mitigación del riesgo por cambio climático (Rural/Migrante)",
+                impactoTema: "la reducción de vulnerabilidades ante radiación UV, estrés térmico y vectores en trabajadores del campo y migrantes",
+                descripcionTecnica: "Sensibilización en prevención de estrés térmico, radiación UV, agroquímicos y vectores, vinculando al 100% de la población rural, campesina e informal migrante.",
+                entregable: "Listados de asistencia diferenciados y reporte de acciones preventivas en campo.",
+                programada: "SI",
+                trimestre: "Q2",
+                fechaLimite: "2026-06-30",
+                metaProg: 3,
+                actEjec: 3,
+                pobMeta: 90,
+                pobInterv: 98,
+                estado: "Completado",
+                observaciones: "Se entregaron elementos de protección (sombreros de ala ancha y protector solar) en veredas agrícolas.",
+                compromisos: "Monitorear en el próximo trimestre el uso continuo de los EPP entregados en las fincas de flores/hortalizas.",
+                archivos: []
+            },
+            {
+                id: 11,
+                area: "3. Trabajo Protegido Adolescente",
+                actividad: "Erradicación de Trabajo Infantil y Trabajo Protegido",
+                impactoTema: "la protección integral de menores de edad y la prevención de la vinculación de adolescentes a oficios peligrosos",
+                descripcionTecnica: "Campañas sensibilizadoras dirigidas a escuelas, padres de familia y comercios sobre edad permitida de trabajo, prohibición de trabajos peligrosos y rutas de protección.",
+                entregable: "Actas de reunión con instituciones educativas, asociaciones de padres y material entregado.",
+                programada: "SI",
+                trimestre: "Q2",
+                fechaLimite: "2026-06-30",
+                metaProg: 2,
+                actEjec: 2,
+                pobMeta: 70,
+                pobInterv: 72,
+                estado: "Completado",
+                observaciones: "Articulación efectiva con la Comisaría de Familia y el Comité de Erradicación de Trabajo Infantil (CIETI).",
+                compromisos: "Mantener activas las alertas en plazas de mercado durante el periodo de vacaciones escolares.",
+                archivos: []
+            },
+            {
+                id: 12,
+                area: "4. Diálogo Social y Redes",
+                actividad: "Conformación/activación Red de Apoyo Municipal SST",
+                impactoTema: "la institucionalización de la mesa de concertación intersectorial para la gobernanza local de la salud laboral",
+                descripcionTecnica: "Formalización de la Red Municipal de Salud Laboral (en cumplimiento del Art. 17 Decreto 16 de 1997) articulando Alcaldía, ESE, UMATA y líderes de la economía popular.",
+                entregable: "Acta de constitución oficial de la Red de Apoyo Municipal y cronograma de sesiones.",
+                programada: "SI",
+                trimestre: "Q1",
+                fechaLimite: "2026-03-31",
+                metaProg: 1,
+                actEjec: 1,
+                pobMeta: 20,
+                pobInterv: 22,
+                estado: "Completado",
+                observaciones: "Red formalizada mediante acta del Comité Municipal de Salud.",
+                compromisos: "Convocar a la segunda sesión ordinaria de seguimiento de la Red para el mes de octubre.",
+                archivos: []
+            },
+            {
+                id: 13,
+                area: "5. Vigilancia SIVISALA",
+                actividad: "Vigilancia y autocuidado en uso de plaguicidas",
+                impactoTema: "la prevención de intoxicaciones agudas y la adopción de prácticas de protección respiratoria e higiene en el sector agrícola",
+                descripcionTecnica: "Asistencia técnica directa en fincas agrícolas sobre almacenamiento seguro, uso de EPP respiratorio e impermeable, triple lavado y ruta de reporte de intoxicaciones.",
+                entregable: "Listas de chequeo de almacenamiento de sustancias químicas e informes de visitas de asistencia técnica.",
+                programada: "SI",
+                trimestre: "Q3",
+                fechaLimite: "2026-09-30",
+                metaProg: 4,
+                actEjec: 4,
+                pobMeta: 80,
+                pobInterv: 85,
+                estado: "Completado",
+                observaciones: "Acompañamiento realizado junto con los inspectores de sanidad y ambiente.",
+                compromisos: "Verificar en la siguiente visita la adecuación de la bodega de almacenamiento de químicos en 2 fincas con hallazgos.",
+                archivos: []
+            },
+            {
+                id: 14,
+                area: "5. Vigilancia SIVISALA",
+                actividad: "Notificación y seguimiento de intoxicaciones agudas",
+                impactoTema: "la oportunidad en el reporte epidemiológico y la investigación oportuna de eventos químicos en la red hospitalaria",
+                descripcionTecnica: "Verificación del flujo de notificación inmediata ante la E.S.E. municipal para casos sospechosos de intoxicación por plaguicidas u otras sustancias químicas de uso laboral.",
+                entregable: "Fichas epidemiológicas SIVIGILA/SIVISALA revisadas e informe de investigación del evento.",
+                programada: "SI",
+                trimestre: "Q4",
+                fechaLimite: "2026-11-30",
+                metaProg: 2,
+                actEjec: 2,
+                pobMeta: 10,
+                pobInterv: 10,
+                estado: "Completado",
+                observaciones: "Se auditaron 2 fichas de notificación e investigación en el centro de salud.",
+                compromisos: "Mantener la vigilancia epidemiológica continua con el área de vigilancia en salud pública hospitalaria.",
+                archivos: []
+            },
+            {
+                id: 15,
+                area: "6. Participación Comunitaria",
+                actividad: "Mapeo participativo de riesgos sociolaborales",
+                impactoTema: "la identificación comunitaria de puntos calientes de accidentalidad y factores de peligro mediante cartografía social",
+                descripcionTecnica: "Cartografía social interactiva desarrollada con la comunidad trabajadora informal para identificar puntos calientes de accidentes y exposición a peligros.",
+                entregable: "Mapas comunitarios de riesgo construidos y matriz de hallazgos prioritarios.",
+                programada: "SI",
+                trimestre: "Q3",
+                fechaLimite: "2026-09-30",
+                metaProg: 2,
+                actEjec: 1,
+                pobMeta: 50,
+                pobInterv: 30,
+                estado: "En Proceso",
+                observaciones: "Primer mapa participativo construido con recicladores de oficio.",
+                compromisos: "Desarrollar el segundo taller de cartografía social en la zona rural con la junta de acción comunal.",
+                archivos: []
+            },
+            {
+                id: 16,
+                area: "6. Participación Comunitaria",
+                actividad: "Redes comunitarias de vigías en SST",
+                impactoTema: "el empoderamiento del liderazgo comunitario para la alerta temprana de riesgos laborales en el territorio",
+                descripcionTecnica: "Elección y formación de líderes informales como 'Vigías Comunitarios de Salud Laboral' para canalizar inquietudes y reportes de la comunidad ante las autoridades.",
+                entregable: "Directorio de vigías comunitarios constituidos y actas de capacitación técnica.",
+                programada: "SI",
+                trimestre: "Q4",
+                fechaLimite: "2026-12-15",
+                metaProg: 1,
+                actEjec: 0,
+                pobMeta: 15,
+                pobInterv: 0,
+                estado: "No Iniciado",
+                observaciones: "Actividad programada para el cuarto trimestre según cronograma.",
+                compromisos: "ALERTA DE INCUMPLIMIENTO / COMPROMISO: Iniciar convocatoria de líderes comunitarios a partir de la primera semana de noviembre.",
+                archivos: []
+            },
+            {
+                id: 17,
+                area: "7. Evaluación e Inspección",
+                actividad: "Asistencia técnica e inspección a entornos informales",
+                impactoTema: "el acompañamiento pedagógico en terreno para el mejoramiento continuo de las condiciones de seguridad en talleres y comercios",
+                descripcionTecnica: "Visitas pedagógicas periódicas de inspección preventiva, evaluando el cumplimiento de normas mínimas de seguridad en talleres, microempresas e informales.",
+                entregable: "Informes consolidados de visitas de inspección técnica con planes de mejora concertados.",
+                programada: "SI",
+                trimestre: "Q4",
+                fechaLimite: "2026-12-15",
+                metaProg: 5,
+                actEjec: 3,
+                pobMeta: 50,
+                pobInterv: 35,
+                estado: "En Proceso",
+                observaciones: "3 visitas de asistencia técnica realizadas.",
+                compromisos: "Programar las 2 visitas restantes en talleres mecánicos antes de finalizar la vigencia.",
+                archivos: []
+            }
+        ];
+         let actividadesMunicipio = [];
+
+async function sincronizarMunicipio() {
+
+    try {
+
+        const municipio =
+            document.getElementById(
+                "municipioSelect"
+            ).value;
+
+        console.log(
+            "Municipio:",
+            municipio
+        );
+
+        actividadesMunicipio =
+            await obtenerActividadesPorMunicipio(
+                municipio
+            );
+
+        console.log(
+            "Actividades encontradas:",
+            actividadesMunicipio.length
+        );
+
+        renderChecklistTable();
+
+    } catch(error){
+
+        console.error(
+            "Error sincronizando municipio:",
+            error
+        );
+
+    }
+
+}
+        let actividadesFirestore = [];
+
+        let chartEstadoInstance = null;
+        let chartAreasInstance = null;
+
+        // Exportar a PDF / Activar ventana de impresión del navegador
+        function imprimirReportePDF() {
+            // Asegurar que la pestaña de Informe esté visible antes de imprimir para incluir firmas y análisis
+            switchTab('informe');
+            
+            // Esperar un breve instante para renderizado de iconos/charts y ejecutar impresión
+            setTimeout(() => {
+                window.print();
+            }, 300);
+        }
+
+        // Initialize application logic
+        window.onload = function() {
+            console.log(
+    "Municipio actual:",
+    document.getElementById(
+        "municipioSelect"
+    )?.value
+);
+
+    try {
+
+        lucide.createIcons();
+
+        cargarProvincias();
+
+        document.getElementById(
+            'informeFecha'
+        ).innerText =
+        "Fecha de Emisión: " +
+        new Date().toLocaleDateString('es-CO');
+
+        initCanvasFirmas();
+
+        actualizarReporte();
+
+    } catch(error){
+
+        alert(
+            "ERROR: " + error.message
+        );
+
+        console.error(error);
+
+    }
+
+};
+
+        // Populate Provinces
+        function cargarProvincias() {
+            const selectProv = document.getElementById('provinciaSelect');
+            selectProv.innerHTML = '';
+            Object.keys(provinciasCundinamarca).forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p;
+                opt.innerText = p;
+                selectProv.appendChild(opt);
+            });
+            cargarMunicipios();
+        }
+
+        // Populate Municipalities based on selected Province
+        function cargarMunicipios() {
+            const prov = document.getElementById('provinciaSelect').value;
+            const selectMun = document.getElementById('municipioSelect');
+            selectMun.innerHTML = '';
+
+            const muns = provinciasCundinamarca[prov] || [];
+            muns.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.innerText = m;
+                selectMun.appendChild(opt);
+            });
+
+            actualizarReporte();
+            sincronizarMunicipio();
+        }
+
+        // Navigation between tabs
+       function switchTab(tabName) {
+
+    document.querySelectorAll(
+        'section[id^="content-"]'
+    ).forEach(el =>
+        el.classList.add('hidden')
+    );
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+
+        btn.classList.remove(
+            'border-teal-600',
+            'text-teal-600',
+            'font-semibold'
+        );
+
+        btn.classList.add(
+            'border-transparent',
+            'text-slate-500',
+            'font-medium'
+        );
+
+    });
+
+    document.getElementById(
+        `content-${tabName}`
+    ).classList.remove('hidden');
+
+    const activeBtn =
+        document.getElementById(
+            `tab-${tabName}`
+        );
+
+    activeBtn.classList.add(
+        'border-teal-600',
+        'text-teal-600',
+        'font-semibold'
+    );
+
+    activeBtn.classList.remove(
+        'border-transparent',
+        'text-slate-500'
+    );
+
+    if (tabName === 'dashboard') {
+
+        renderCharts();
+
+    }
+
+}
+
+        // Global update function for calculations, tables, charts, and detailed report
+        function actualizarReporte() {
+            const prov = document.getElementById('provinciaSelect').value;
+            const mun = document.getElementById('municipioSelect').value;
+            const perf = document.getElementById('perfilSelect').value;
+
+            document.getElementById('informeMunicipioNombre').innerText = `${mun} (${prov})`;
+            document.getElementById('informePerfil').innerText = "Perfil: " + perf;
+
+            renderChecklistTable();
+            renderDashboardKPIs();
+            renderCharts();
+            renderInformeAnalitico();
+        }
+
+        // Calculate due date status badge
+        function obtenerAlertaSemaforo(fechaLimiteStr, estado) {
+            if (estado === 'Completado') {
+                return { text: "Completado a tiempo", class: "bg-emerald-100 text-emerald-800 border-emerald-300" };
+            }
+            if (estado === 'No Aplica') {
+                return { text: "No Aplica", class: "bg-slate-100 text-slate-500 border-slate-300" };
+            }
+
+            const hoy = new Date();
+            const limite = new Date(fechaLimiteStr);
+            const diffDias = Math.ceil((limite - hoy) / (1000 * 60 * 60 * 24));
+
+            if (diffDias < 0) {
+                return { text: `Vencido (${Math.abs(diffDias)} días)`, class: "bg-rose-100 text-rose-800 border-rose-300 font-bold" };
+            } else if (diffDias <= 30) {
+                return { text: `Próximo a vencer (${diffDias} d)`, class: "bg-amber-100 text-amber-800 border-amber-300 font-bold" };
+            } else {
+                return { text: "A tiempo", class: "bg-blue-100 text-blue-800 border-blue-300" };
+            }
+        }
+
+        // Render checklist table
+        function renderChecklistTable() {
+            const tbody = document.getElementById('checklistTableBody');
+            tbody.innerHTML = '';
+
+            const progFilter = document.getElementById('filterProgramada').value;
+            const trimestreFilter = document.getElementById('filterTrimestre').value;
+            const estadoFilter = document.getElementById('filterEstado').value;
+
+           (
+    actividadesMunicipio.length > 0
+        ? actividadesMunicipio
+        : actividadesData
+).forEach((act) => {
+                // Apply UI filters
+                if (progFilter !== 'TODAS' && act.programada !== progFilter) return;
+                if (trimestreFilter !== 'TODOS' && act.trimestre !== trimestreFilter) return;
+                if (estadoFilter !== 'TODOS' && act.estado !== estadoFilter) return;
+
+                const pctAvance = act.programada === 'NO' ? 0 : (act.metaProg > 0 ? Math.round((act.actEjec / act.metaProg) * 100) : 0);
+                const pctCobertura = act.programada === 'NO' ? 0 : (act.pobMeta > 0 ? Math.round((act.pobInterv / act.pobMeta) * 100) : 0);
+
+                let badgeClass = "bg-slate-100 text-slate-700";
+                if (act.programada === 'NO' || act.estado === 'No Aplica') {
+                    badgeClass = "bg-slate-100 text-slate-500 border border-slate-300";
+                } else if (act.estado === 'Completado') {
+                    badgeClass = "bg-emerald-100 text-emerald-800 border border-emerald-200";
+                } else if (act.estado === 'En Proceso') {
+                    badgeClass = "bg-amber-100 text-amber-800 border border-amber-200";
+                } else if (act.estado === 'No Iniciado') {
+                    badgeClass = "bg-rose-100 text-rose-800 border border-rose-200";
+                }
+
+                const semaforo = act.programada === 'SI' ? obtenerAlertaSemaforo(act.fechaLimite, act.estado) : { text: "N/A", class: "bg-slate-100 text-slate-400 border-slate-200" };
+
+                // Generación de lista de adjuntos en celda
+                let archivosHtml = '';
+                if (act.archivos && act.archivos.length > 0) {
+                    archivosHtml = `<div class="mt-1 flex flex-col space-y-1">` +
+                        act.archivos.map((f, fIdx) => `
+                            <div class="flex items-center justify-between bg-slate-100 text-[10px] p-1 rounded border border-slate-200">
+                                <span class="truncate max-w-[80px] font-medium text-slate-700" title="${f.name}">${f.name}</span>
+                                <button onclick="eliminarArchivo(${act.id}, ${fIdx})" class="text-rose-500 hover:text-rose-700 ml-1 font-bold" title="Eliminar">×</button>
+                            </div>
+                        `).join('') + `</div>`;
+                }
+
+                const row = document.createElement('tr');
+                row.className = "hover:bg-slate-50 transition";
+                row.innerHTML = `
+                    <td class="p-2.5 text-center font-bold text-slate-400">${act.id}</td>
+                    <td class="p-2.5">
+                        <div class="font-bold text-slate-800">${act.actividad}</div>
+                        <div class="text-[10px] text-slate-500 font-medium">${act.area}</div>
+                    </td>
+                    <td class="p-2.5 text-center">
+                        <select onchange="cambiarProgramada(${act.id}, this.value)" class="bg-slate-50 border border-slate-300 text-xs rounded px-1 py-1 font-semibold ${act.programada === 'SI' ? 'text-teal-700' : 'text-slate-400'}">
+                            <option value="SI" ${act.programada === 'SI' ? 'selected' : ''}>SÍ</option>
+                            <option value="NO" ${act.programada === 'NO' ? 'selected' : ''}>NO</option>
+                        </select>
+                    </td>
+                    <td class="p-2.5 text-center">
+                        <select onchange="actualizarDato(${act.id}, 'trimestre', this.value)" ${act.programada === 'NO' ? 'disabled' : ''} class="bg-slate-50 border border-slate-300 text-xs rounded px-1 py-1 font-bold text-slate-700">
+                            <option value="Q1" ${act.trimestre === 'Q1' ? 'selected' : ''}>Q1</option>
+                            <option value="Q2" ${act.trimestre === 'Q2' ? 'selected' : ''}>Q2</option>
+                            <option value="Q3" ${act.trimestre === 'Q3' ? 'selected' : ''}>Q3</option>
+                            <option value="Q4" ${act.trimestre === 'Q4' ? 'selected' : ''}>Q4</option>
+                        </select>
+                    </td>
+                    <td class="p-2.5 text-center">
+                        <input type="date" value="${act.fechaLimite}" ${act.programada === 'NO' ? 'disabled' : ''} onchange="actualizarDato(${act.id}, 'fechaLimite', this.value)" class="text-[10px] border border-slate-300 rounded px-1 py-0.5 w-24">
+                        <div class="mt-1"><span class="text-[9px] px-1.5 py-0.5 rounded border ${semaforo.class}">${semaforo.text}</span></div>
+                    </td>
+                    <td class="p-2.5 text-center">
+                        <input type="number" min="0" value="${act.metaProg}" ${act.programada === 'NO' ? 'disabled' : ''} onchange="actualizarDato(${act.id}, 'metaProg', this.value)" class="w-10 text-center border border-slate-300 rounded py-0.5 text-xs">
+                    </td>
+                    <td class="p-2.5 text-center">
+                        <input type="number" min="0" value="${act.actEjec}" ${act.programada === 'NO' ? 'disabled' : ''} onchange="actualizarDato(${act.id}, 'actEjec', this.value)" class="w-10 text-center border border-slate-300 rounded py-0.5 text-xs">
+                    </td>
+                    <td class="p-2.5 text-center font-bold ${pctAvance >= 100 ? 'text-emerald-600' : (pctAvance > 0 ? 'text-amber-600' : 'text-slate-400')}">
+                        ${act.programada === 'NO' ? 'N/A' : pctAvance + '%'}
+                    </td>
+                    <td class="p-2.5 text-center">
+                        <select onchange="actualizarDato(${act.id}, 'estado', this.value)" ${act.programada === 'NO' ? 'disabled' : ''} class="text-xs rounded px-1 py-1 font-semibold ${badgeClass}">
+                            <option value="Completado" ${act.estado === 'Completado' ? 'selected' : ''}>Completado</option>
+                            <option value="En Proceso" ${act.estado === 'En Proceso' ? 'selected' : ''}>En Proceso</option>
+                            <option value="No Iniciado" ${act.estado === 'No Iniciado' ? 'selected' : ''}>No Iniciado</option>
+                            <option value="No Aplica" ${act.estado === 'No Aplica' ? 'selected' : ''}>No Aplica</option>
+                        </select>
+                    </td>
+                    <td class="p-2.5 text-center">
+                        <input type="number" min="0" value="${act.pobMeta}" ${act.programada === 'NO' ? 'disabled' : ''} onchange="actualizarDato(${act.id}, 'pobMeta', this.value)" class="w-12 text-center border border-slate-300 rounded py-0.5 text-xs">
+                    </td>
+                    <td class="p-2.5 text-center">
+                        <input type="number" min="0" value="${act.pobInterv}" ${act.programada === 'NO' ? 'disabled' : ''} onchange="actualizarDato(${act.id}, 'pobInterv', this.value)" class="w-12 text-center border border-slate-300 rounded py-0.5 text-xs">
+                    </td>
+                    <td class="p-2.5 text-center font-bold ${pctCobertura >= 100 ? 'text-indigo-600' : 'text-slate-600'}">
+                        ${act.programada === 'NO' ? 'N/A' : pctCobertura + '%'}
+                    </td>
+                    <td class="p-2.5">
+                        <textarea placeholder="Observaciones técnicas de la actividad..." ${act.programada === 'NO' ? 'disabled' : ''} onchange="actualizarDato(${act.id}, 'observaciones', this.value)" class="w-full text-[11px] p-1.5 border border-slate-300 rounded focus:ring-teal-500 focus:border-teal-500 h-14 resize-none bg-slate-50/50">${act.observaciones || ''}</textarea>
+                    </td>
+                    <td class="p-2.5">
+                        <textarea placeholder="Planes de mejora y compromisos para el próximo seguimiento..." ${act.programada === 'NO' ? 'disabled' : ''} onchange="actualizarDato(${act.id}, 'compromisos', this.value)" class="w-full text-[11px] p-1.5 border border-amber-300 rounded focus:ring-amber-500 focus:border-amber-500 h-14 resize-none bg-amber-50/30">${act.compromisos || ''}</textarea>
+                    </td>
+                    <td class="p-2.5 text-center">
+                        <label class="cursor-pointer bg-slate-800 hover:bg-slate-700 text-white text-[10px] font-semibold px-2 py-1 rounded inline-flex items-center space-x-1 transition shadow-sm">
+                            <i data-lucide="upload-cloud" class="w-3 h-3"></i>
+                            <span>Adjuntar</span>
+                            <input type="file" multiple onchange="subirArchivos(${act.id}, this.files)" class="hidden" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.xlsx">
+                        </label>
+                        ${archivosHtml}
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            lucide.createIcons();
+        }
+
+        // Subir y almacenar archivos en memoria local
+        function subirArchivos(actId, fileList) {
+            const act = actividadesData.find(a => a.id === actId);
+            if (!act) return;
+
+            if (!act.archivos) act.archivos = [];
+
+            Array.from(fileList).forEach(f => {
+                act.archivos.push({
+                    name: f.name,
+                    size: (f.size / 1024).toFixed(1) + ' KB',
+                    type: f.type,
+                    date: new Date().toLocaleDateString('es-CO')
+                });
+            });
+
+            actualizarReporte();
+        }
+
+        // Eliminar soporte adjunto
+        function eliminarArchivo(actId, index) {
+            const act = actividadesData.find(a => a.id === actId);
+            if (act && act.archivos) {
+                act.archivos.splice(index, 1);
+                actualizarReporte();
+            }
+        }
+
+        // Change 'Programada' handler
+        function cambiarProgramada(id, valor) {
+            const act = actividadesData.find(a => a.id === id);
+            if (act) {
+                act.programada = valor;
+                if (valor === 'NO') {
+                    act.estado = 'No Aplica';
+                } else {
+                    act.estado = 'En Proceso';
+                }
+                actualizarReporte();
+            }
+        }
+
+        // Update single fields dynamically
+        function actualizarDato(id, campo, valor) {
+            const act = actividadesData.find(a => a.id === id);
+            if (act) {
+                if (campo === 'estado' || campo === 'trimestre' || campo === 'fechaLimite' || campo === 'observaciones' || campo === 'compromisos') {
+                    act[campo] = valor;
+                } else {
+                    act[campo] = parseFloat(valor) || 0;
+                }
+                actualizarReporte();
+            }
+        }
+
+        // Calculate Executive Dashboard KPIs
+        function renderDashboardKPIs() {
+            const programadas = actividadesData.filter(a => a.programada === 'SI');
+            const noProgramadas = actividadesData.filter(a => a.programada === 'NO');
+
+            const totalProgramadas = programadas.length;
+            const completadas = programadas.filter(a => a.estado === 'Completado').length;
+            const alertas = programadas.filter(a => a.estado === 'En Proceso' || a.estado === 'No Iniciado').length;
+
+            const totalPobMeta = programadas.reduce((sum, a) => sum + a.pobMeta, 0);
+            const totalPobInterv = programadas.reduce((sum, a) => sum + a.pobInterv, 0);
+
+            const avancePct = totalProgramadas > 0 ? Math.round((completadas / totalProgramadas) * 100) : 0;
+            const coberturaPct = totalPobMeta > 0 ? Math.round((totalPobInterv / totalPobMeta) * 100) : 0;
+
+            document.getElementById('kpi-avance-general').innerText = `${avancePct}%`;
+            document.getElementById('kpi-compl-count').innerText = completadas;
+            document.getElementById('kpi-prog-count').innerText = totalProgramadas;
+
+            document.getElementById('kpi-poblacion-total').innerText = totalPobInterv.toLocaleString();
+            document.getElementById('kpi-poblacion-meta').innerText = totalPobMeta.toLocaleString();
+            document.getElementById('kpi-poblacion-cobertura').innerText = `${coberturaPct}%`;
+
+            document.getElementById('kpi-actividades-programadas').innerText = `${totalProgramadas} / 17`;
+            document.getElementById('kpi-no-programadas').innerText = noProgramadas.length;
+
+            document.getElementById('kpi-alertas-count').innerText = alertas;
+        }
+
+        // Render Dashboard Charts with Chart.js
+        function renderCharts() {
+            const programadas = actividadesData.filter(a => a.programada === 'SI');
+
+            // Doughnut Data
+            const countCompletado = programadas.filter(a => a.estado === 'Completado').length;
+            const countEnProceso = programadas.filter(a => a.estado === 'En Proceso').length;
+            const countNoIniciado = programadas.filter(a => a.estado === 'No Iniciado').length;
+
+            if (chartEstadoInstance) chartEstadoInstance.destroy();
+
+            const ctxEstado = document.getElementById('chartEstado').getContext('2d');
+            chartEstadoInstance = new Chart(ctxEstado, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completado', 'En Proceso', 'No Iniciado'],
+                    datasets: [{
+                        data: [countCompletado, countEnProceso, countNoIniciado],
+                        backgroundColor: ['#10b981', '#f59e0b', '#f43f5e'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+                    }
+                }
+            });
+
+            // Bar Chart Area calculations
+            const areasMap = {};
+            programadas.forEach(act => {
+                if (!areasMap[act.area]) {
+                    areasMap[act.area] = { total: 0, ejec: 0 };
+                }
+                areasMap[act.area].total += act.metaProg;
+                areasMap[act.area].ejec += act.actEjec;
+            });
+
+            const labelsArea = Object.keys(areasMap);
+            const dataPctArea = labelsArea.map(a => {
+                const item = areasMap[a];
+                return item.total > 0 ? Math.round((item.ejec / item.total) * 100) : 0;
+            });
+
+            if (chartAreasInstance) chartAreasInstance.destroy();
+
+            const ctxAreas = document.getElementById('chartAreas').getContext('2d');
+            chartAreasInstance = new Chart(ctxAreas, {
+                type: 'bar',
+                data: {
+                    labels: labelsArea,
+                    datasets: [{
+                        label: '% Avance por Área',
+                        data: dataPctArea,
+                        backgroundColor: '#0d9488',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } },
+                        x: { ticks: { font: { size: 10 } } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // GENERACIÓN AUTOMÁTICA DEL PARÁGRAFO ESTADÍSTICO INDIVIDUAL POR ACTIVIDAD
+        function generarParagrafoEstadistico(act) {
+            if (act.programada === 'NO') {
+                return `<strong>Análisis Estadístico Automatizado:</strong> La actividad No. ${act.id} del Área <em>'${act.area}'</em> no fue programada en la matriz territorial del municipio para la presente vigencia. Por lo tanto, registra un indicador de ejecución de 0/0 (0%) y no reporta cobertura poblacional acumulada.`;
+            }
+
+            const pctCumplimiento = act.metaProg > 0 ? Math.round((act.actEjec / act.metaProg) * 100) : 0;
+            const pctCoberturaPob = act.pobMeta > 0 ? Math.round((act.pobInterv / act.pobMeta) * 100) : 0;
+
+            let textoCumplimiento = "";
+            let estadoInterpretacion = "";
+
+            if (act.actEjec >= act.metaProg) {
+                textoCumplimiento = `fueron programadas <strong>${act.metaProg}</strong> actividades las cuales a la fecha ya se cumplieron en su totalidad (<strong>${act.actEjec} ejec. / ${pctCumplimiento}%</strong>)`;
+                estadoInterpretacion = "lo que significa una <strong>META ALCANZADA SATISFACTORIAMENTE</strong>";
+            } else if (act.actEjec > 0) {
+                textoCumplimiento = `fueron programadas <strong>${act.metaProg}</strong> actividades de las cuales a la fecha se han ejecutado <strong>${act.actEjec}</strong> (avance parcial del <strong>${pctCumplimiento}%</strong>)`;
+                estadoInterpretacion = "lo que indica una <strong>GESTIÓN EN PROCESO DE EJECUCIÓN</strong>";
+            } else {
+                textoCumplimiento = `fueron programadas <strong>${act.metaProg}</strong> actividades, registrando a la fecha <strong>0 ejecuciones (0%)</strong>`;
+                estadoInterpretacion = "lo que sitúa esta actividad en <strong>ESTADO PENDIENTE DE INICIO / ALERTA DE CRONOGRAMA</strong>";
+            }
+
+            let textoPoblacional = `con una cobertura poblacional de <strong>${act.pobInterv} personas intervenidas</strong> (meta proyectada: ${act.pobMeta} pers. - ${pctCoberturaPob}% de cobertura)`;
+
+            return `<strong>Análisis Estadístico Automatizado:</strong> De la actividad No. ${act.id} (<em>'${act.actividad}'</em>) del Área de <em>${act.area}</em>, ${textoCumplimiento} ${textoPoblacional}, ${estadoInterpretacion}, lo que implica que se intervino directamente en la población trabajadora informal y comunitaria del municipio en lo relativo a ${act.impactoTema}.`;
+        }
+
+        // Render Comprehensive Activity-by-Activity Data Analysis Report
+        function renderInformeAnalitico() {
+            const prov = document.getElementById('provinciaSelect').value;
+            const mun = document.getElementById('municipioSelect').value;
+            const perf = document.getElementById('perfilSelect').value;
+            const programadas = actividadesData.filter(a => a.programada === 'SI');
+            const noProgramadas = actividadesData.filter(a => a.programada === 'NO');
+
+            const completadas = programadas.filter(a => a.estado === 'Completado').length;
+            const enProceso = programadas.filter(a => a.estado === 'En Proceso').length;
+            const noIniciadas = programadas.filter(a => a.estado === 'No Iniciado').length;
+            const totalPobInterv = programadas.reduce((s, a) => s + a.pobInterv, 0);
+
+            // Dynamic Executive Summary text
+            const resumenEl = document.getElementById('informeResumenTexto');
+            resumenEl.innerHTML = `
+                El municipio de <strong>${mun}</strong> (Provincia de <strong>${prov}</strong>), con acompañamiento del referente técnico <strong>${perf}</strong>, registra una programación efectiva de <strong>${programadas.length}</strong> de las 17 actividades territoriales de Salud y Seguridad en el Trabajo. A la fecha, se presenta un cumplimiento global del <strong>${programadas.length > 0 ? Math.round((completadas / programadas.length) * 100) : 0}%</strong> con <strong>${completadas}</strong> actividades culminadas, <strong>${enProceso}</strong> en ejecución activa y <strong>${noIniciadas}</strong> pendientes de inicio. (${noProgramadas.length} actividades se clasificaron como 'No Aplica' en la matriz territorial). La cobertura total alcanzada asciende a <strong>${totalPobInterv.toLocaleString()}</strong> trabajadores de la economía popular e informal impactados en la jurisdicción.
+            `;
+
+            // Detailed activity containers with Statistical Paragraph
+            const contenedor = document.getElementById('contenedorDescriptivoActividades');
+            contenedor.innerHTML = '';
+
+            actividadesData.forEach(act => {
+                const esProg = act.programada === 'SI';
+                const pctAvance = esProg && act.metaProg > 0 ? Math.round((act.actEjec / act.metaProg) * 100) : 0;
+                const pctPob = esProg && act.pobMeta > 0 ? Math.round((act.pobInterv / act.pobMeta) * 100) : 0;
+
+                let estadoBadgeColor = "bg-slate-100 text-slate-600 border-slate-300";
+                if (esProg) {
+                    if (act.estado === 'Completado') estadoBadgeColor = "bg-emerald-100 text-emerald-800 border-emerald-300";
+                    if (act.estado === 'En Proceso') estadoBadgeColor = "bg-amber-100 text-amber-800 border-amber-300";
+                    if (act.estado === 'No Iniciado') estadoBadgeColor = "bg-rose-100 text-rose-800 border-rose-300";
+                }
+
+                const semaforo = esProg ? obtenerAlertaSemaforo(act.fechaLimite, act.estado) : { text: "N/A", class: "bg-slate-100 text-slate-400 border-slate-200" };
+
+                // Generación de lista de evidencias en el informe
+                let soportesListHtml = `<p class="text-[11px] text-slate-400 italic">No hay archivos cargados aún.</p>`;
+                if (act.archivos && act.archivos.length > 0) {
+                    soportesListHtml = `<div class="flex flex-wrap gap-1.5 mt-1">` +
+                        act.archivos.map(f => `
+                            <span class="bg-teal-50 text-teal-800 border border-teal-200 text-[10px] font-medium px-2 py-0.5 rounded flex items-center space-x-1">
+                                <i data-lucide="paperclip" class="w-3 h-3"></i>
+                                <span>${f.name} (${f.size})</span>
+                            </span>
+                        `).join('') + `</div>`;
+                }
+
+                // Parágrafo automatizado generado para la actividad
+                const paragrafoEstadistico = generarParagrafoEstadistico(act);
+
+                // Determinar alertas automáticas de incumplimiento
+                let alertaIncumplimientoHtml = '';
+                if (esProg) {
+                    const hoy = new Date();
+                    const limite = new Date(act.fechaLimite);
+                    const estaVencida = limite < hoy && act.actEjec < act.metaProg;
+                    const bajoAvance = act.metaProg > 0 && (act.actEjec / act.metaProg) < 0.5 && act.estado !== 'Completado';
+
+                    if (estaVencida || act.estado === 'No Iniciado' || bajoAvance) {
+                        alertaIncumplimientoHtml = `
+                            <div class="bg-rose-50 p-3 rounded-lg border border-rose-200 text-xs text-rose-900 flex items-start space-x-2">
+                                <i data-lucide="alert-octagon" class="w-4 h-4 text-rose-600 shrink-0 mt-0.5"></i>
+                                <div>
+                                    <strong class="font-bold uppercase text-[10px] text-rose-800 block">Alerta de Riesgo de Incumplimiento Territorial:</strong>
+                                    <span>${estaVencida ? 'Actividad con fecha límite vencida sin alcanzar la meta de ejecuciones.' : (act.estado === 'No Iniciado' ? 'Actividad pendiente de inicio que requiere acción prioritaria inmediata.' : 'Avance de ejecución inferior al 50% frente a la meta programada.')}</span>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+
+                const card = document.createElement('div');
+                card.className = `bg-white rounded-xl border ${esProg ? 'border-slate-200 shadow-sm' : 'border-slate-200 bg-slate-50/50 opacity-75'} p-5 space-y-4`;
+
+                card.innerHTML = `
+                    <div class="flex flex-wrap items-start justify-between gap-2 border-b border-slate-100 pb-3">
+                        <div class="flex items-center space-x-3">
+                            <span class="bg-slate-900 text-teal-400 font-bold text-xs w-7 h-7 rounded-lg flex items-center justify-center shrink-0">
+                                ${act.id}
+                            </span>
+                            <div>
+                                <h4 class="font-bold text-sm text-slate-800">${act.actividad}</h4>
+                                <span class="text-[11px] font-semibold text-teal-700 uppercase tracking-wider">${act.area} | Programado: ${act.trimestre} (${act.fechaLimite})</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded border ${semaforo.class}">${semaforo.text}</span>
+                            <span class="text-[10px] font-bold px-2.5 py-1 rounded-full border ${estadoBadgeColor}">
+                                ${esProg ? act.estado : 'NO PROGRAMADA'}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- CAJA DESTACADA: ANÁLISIS ESTADÍSTICO AUTOMATIZADO -->
+                    <div class="bg-teal-50/60 p-4 rounded-lg border border-teal-200/80 space-y-1">
+                        <p class="text-xs text-slate-800 leading-relaxed">
+                            ${paragrafoEstadistico}
+                        </p>
+                    </div>
+
+                    ${alertaIncumplimientoHtml}
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200/80 space-y-1">
+                            <p class="font-bold text-slate-700 uppercase text-[10px] flex items-center space-x-1">
+                                <i data-lucide="info" class="w-3.5 h-3.5 text-teal-600"></i>
+                                <span>Metodología & Alcance Técnico</span>
+                            </p>
+                            <p class="text-slate-600 leading-relaxed">${act.descripcionTecnica}</p>
+                        </div>
+
+                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200/80 space-y-1">
+                            <p class="font-bold text-slate-700 uppercase text-[10px] flex items-center space-x-1">
+                                <i data-lucide="file-check" class="w-3.5 h-3.5 text-teal-600"></i>
+                                <span>Entregables / Evidencias Requeridas</span>
+                            </p>
+                            <p class="text-slate-600 leading-relaxed">${act.entregable}</p>
+                        </div>
+                    </div>
+
+                    <!-- OBSERVACIONES Y PLANES DE MEJORA EN INFORME -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200/80 space-y-1">
+                            <p class="font-bold text-slate-700 uppercase text-[10px] flex items-center space-x-1">
+                                <i data-lucide="message-square" class="w-3.5 h-3.5 text-teal-600"></i>
+                                <span>Observaciones Técnicas Cualitativas</span>
+                            </p>
+                            <p class="text-slate-700 leading-relaxed italic">${act.observaciones || 'Sin observaciones registradas.'}</p>
+                        </div>
+
+                        <div class="bg-amber-50/60 p-3 rounded-lg border border-amber-200 space-y-1">
+                            <p class="font-bold text-amber-900 uppercase text-[10px] flex items-center space-x-1">
+                                <i data-lucide="target" class="w-3.5 h-3.5 text-amber-600"></i>
+                                <span>Plan de Mejora & Compromisos (Próximo Seguimiento)</span>
+                            </p>
+                            <p class="text-amber-950 font-medium leading-relaxed">${act.compromisos || 'Sin compromisos específicos pactados.'}</p>
+                        </div>
+                    </div>
+
+                    <!-- Sección de Soportes Adjuntos -->
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200/80 space-y-1">
+                        <p class="font-bold text-slate-700 uppercase text-[10px] flex items-center space-x-1">
+                            <i data-lucide="folder-check" class="w-3.5 h-3.5 text-teal-600"></i>
+                            <span>Soportes y Evidencias Adjuntas</span>
+                        </p>
+                        <div>${soportesListHtml}</div>
+                    </div>
+
+                    ${esProg ? `
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200 text-center">
+                        <div>
+                            <p class="text-[10px] text-slate-500 uppercase font-bold">Metas de Actividad</p>
+                            <p class="text-sm font-extrabold text-slate-800">${act.actEjec} / ${act.metaProg} <span class="text-xs font-normal text-slate-500">(${pctAvance}%)</span></p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-slate-500 uppercase font-bold">Cobertura Poblacional</p>
+                            <p class="text-sm font-extrabold text-slate-800">${act.pobInterv} / ${act.pobMeta} <span class="text-xs font-normal text-slate-500">(${pctPob}%)</span></p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-slate-500 uppercase font-bold">Cronograma</p>
+                            <p class="text-xs font-bold text-slate-700 mt-0.5">${act.trimestre} - ${act.fechaLimite}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-slate-500 uppercase font-bold">Cumplimiento</p>
+                            <p class="text-xs font-bold ${pctAvance >= 100 ? 'text-emerald-600' : 'text-slate-700'} mt-0.5">
+                                ${pctAvance >= 100 ? 'Meta Lograda' : 'En Gestión'}
+                            </p>
+                        </div>
+                    </div>
+                    ` : `
+                    <div class="bg-slate-100 p-2.5 rounded text-center text-xs text-slate-500 italic">
+                        Esta actividad no fue programada en el plan de acción de ${mun}.
+                    </div>
+                    `}
+                `;
+
+                contenedor.appendChild(card);
+            });
+
+            lucide.createIcons();
+        }
+
+        // Lógica de actualización de labels de referentes
+        function guardarDatosReferentes() {
+            const refMunNom = document.getElementById('refMunNombre').value;
+            const refMunCar = document.getElementById('refMunCargo').value;
+            const refDepNom = document.getElementById('refDepNombre').value;
+            const refDepEnt = document.getElementById('refDepEntidad').value;
+
+            document.getElementById('labelFirmaMunNombre').innerText = refMunNom || "Nombre Referente Municipal";
+            document.getElementById('labelFirmaMunCargo').innerText = refMunCar || "Cargo";
+
+            document.getElementById('labelFirmaDepNombre').innerText = refDepNom || "Nombre Referente Departamental";
+            document.getElementById('labelFirmaDepEntidad').innerText = refDepEnt || "Entidad / Subred";
+        }
+
+        // Lógica interactiva para firmas digitales con Canvas
+        function initCanvasFirmas() {
+            ['Mun', 'Dep'].forEach(tipo => {
+                const canvas = document.getElementById(`canvasFirma${tipo}`);
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                let drawing = false;
+
+                function getPos(e) {
+                    const rect = canvas.getBoundingClientRect();
+                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                    return {
+                        x: clientX - rect.left,
+                        y: clientY - rect.top
+                    };
+                }
+
+                function startDraw(e) {
+                    drawing = true;
+                    const pos = getPos(e);
+                    ctx.beginPath();
+                    ctx.moveTo(pos.x, pos.y);
+                }
+
+                function draw(e) {
+                    if (!drawing) return;
+                    e.preventDefault();
+                    const pos = getPos(e);
+                    ctx.lineWidth = 2;
+                    ctx.lineCap = 'round';
+                    ctx.strokeStyle = '#0f172a';
+                    ctx.lineTo(pos.x, pos.y);
+                    ctx.stroke();
+                }
+
+                function stopDraw() {
+                    drawing = false;
+                }
+
+                canvas.addEventListener('mousedown', startDraw);
+                canvas.addEventListener('mousemove', draw);
+                canvas.addEventListener('mouseup', stopDraw);
+                canvas.addEventListener('mouseleave', stopDraw);
+
+                canvas.addEventListener('touchstart', startDraw);
+                canvas.addEventListener('touchmove', draw);
+                canvas.addEventListener('touchend', stopDraw);
+            });
+
+            guardarDatosReferentes();
+        }
+
+        function limpiarFirma(tipo) {
+            const canvas = document.getElementById(`canvasFirma${tipo}`);
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        // Export data to Excel Sheet with full provincial data
+        function exportarExcel() {
+            const prov = document.getElementById('provinciaSelect').value;
+            const mun = document.getElementById('municipioSelect').value;
+            const perf = document.getElementById('perfilSelect').value;
+
+            const rows = actividadesData.map(a => ({
+                'ID': a.id,
+                'Provincia': prov,
+                'Municipio': mun,
+                'Área Estratégica': a.area,
+                'Actividad': a.actividad,
+                '¿Programada?': a.programada,
+                'Trimestre': a.trimestre,
+                'Fecha Límite': a.fechaLimite,
+                'Meta Programada': a.metaProg,
+                'Actividades Ejecutadas': a.actEjec,
+                '% Avance': a.programada === 'SI' && a.metaProg > 0 ? Math.round((a.actEjec / a.metaProg) * 100) + '%' : 'N/A',
+                'Estado': a.estado,
+                'Población Meta': a.pobMeta,
+                'Población Intervenida': a.pobInterv,
+                '% Cobertura': a.programada === 'SI' && a.pobMeta > 0 ? Math.round((a.pobInterv / a.pobMeta) * 100) + '%' : 'N/A',
+                'Observaciones': a.observaciones || '',
+                'Plan de Mejora y Compromisos': a.compromisos || '',
+                'Entregables Requeridos': a.entregable,
+                'Soportes Adjuntos': a.archivos ? a.archivos.map(f => f.name).join(', ') : 'Sin soportes'
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(rows);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Salud Laboral Cundinamarca");
+            XLSX.writeFile(wb, `Seguimiento_SST_${mun}_${prov.replace(/ /g, '_')}_${perf.replace(/ /g, '_')}.xlsx`);
+        }
+    </script>
+</body>
+</html>

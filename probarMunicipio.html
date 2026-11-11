@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Prueba Municipio</title>
+</head>
+<body>
+
+<h1>Cargando...</h1>
+
+<script type="module">
+
+import {
+    obtenerActividadesPorMunicipio
+}
+from "./js/firebase/firebaseService.js";
+
+try {
+
+    const actividades =
+        await obtenerActividadesPorMunicipio(
+            "Facatativá"
+        );
+
+    document.body.innerHTML =
+        "<h2>Total: "
+        + actividades.length +
+        "</h2>";
+
+} catch(error){
+
+    document.body.innerHTML =
+        "<pre>" +
+        error.message +
+        "</pre>";
+
+}
+
+</script>
+
+</body>
+</html>

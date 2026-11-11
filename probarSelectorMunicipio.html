@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Prueba Municipios</title>
+</head>
+<body>
+
+<select id="municipio">
+    <option value="Facatativá">Facatativá</option>
+</select>
+
+<h2 id="resultado">0</h2>
+
+<script type="module">
+
+import {
+    obtenerActividadesPorMunicipio
+}
+from "./js/firebase/firebaseService.js";
+
+async function cargar() {
+
+    const municipio =
+        document.getElementById(
+            "municipio"
+        ).value;
+
+    const actividades =
+        await obtenerActividadesPorMunicipio(
+            municipio
+        );
+
+    document.getElementById(
+        "resultado"
+    ).innerText =
+        actividades.length;
+
+}
+
+document
+.getElementById("municipio")
+.addEventListener(
+    "change",
+    cargar
+);
+
+cargar();
+
+</script>
+
+</body>
+</html>

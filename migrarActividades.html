@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Migrar Actividades</title>
+</head>
+<body>
+
+<h1>Migrando actividades...</h1>
+
+<script type="module">
+    import { initializeApp }
+from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+
+
+import { getFirestore,doc,setDoc}
+from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAM9WixjYzGJ57Twd79tm-DPlwwrfoZpk0",
+  authDomain: "saludlaboral-5b944.firebaseapp.com",
+  projectId: "saludlaboral-5b944",
+  storageBucket: "saludlaboral-5b944.firebasestorage.app",
+  messagingSenderId: "797162139743",
+  appId: "1:797162139743:web:3c8981d12de7e5085eabea"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* PEGA AQUÍ TU actividadesData */
+
+    let actividadesData = [
+            {
+                id: 1,
+                area: "1. Deberes y Derechos",
+                actividad: "Talleres y recorridos en focos de economía informal",
+                impactoTema: "la intervención y sensibilización en formalización laboral y aseguramiento en salud para la economía informal",
+                descripcionTecnica: "Mapeo y georreferenciación de focos de economía informal en plazas de mercado, puntos de reciclaje y acopios agrícolas. Sensibilización directa en los derechos y deberes del SGSSS en el marco de la Ley 1562 de 2012.",
+                entregable: "Listados de asistencia firmados, registro fotográfico y matriz georreferenciada de focos informales.",
+                programada: "SI",
+                trimestre: "Q1",
+                fechaLimite: "2026-03-31",
+                metaProg: 4,
+                actEjec: 4,
+                pobMeta: 200,
+                pobInterv: 200,
+                estado: "Completado",
+                archivos: []
+            },
+            {
+                id: 2,
+                area: "1. Deberes y Derechos",
+                actividad: "Aplicación de herramienta tipo Semáforo",
+                impactoTema: "la autoevaluación ágil del nivel de riesgo en los puestos de trabajo informales para priorizar controles",
+                descripcionTecnica: "Valoración rápida del riesgo en puestos de trabajo informales mediante fichas sencillas de autoevaluación semaforizada (Rojo, Amarillo, Verde).",
+                entregable: "Fichas de caracterización semáforo diligenciadas por sector de trabajo.",
+                programada: "SI",
+                trimestre: "Q1",
+                fechaLimite: "2026-03-31",
+                metaProg: 8,
+                actEjec: 8,
+                pobMeta: 150,
+                pobInterv: 150,
+                estado: "Completado",
+                archivos: []
+            },
+            {
+                id: 3,
+                area: "1. Deberes y Derechos",
+                actividad: "Estrategias de comunicación masiva en SST",
+                impactoTema: "la apropiación social de conceptos de prevención de riesgos a través de medios de difusión local",
+                descripcionTecnica: "Emisión de cuñas pedagógicas en emisoras comunitarias e instalación de material impreso (afiches y plegables) en la Alcaldía, E.S.E. y puntos de alta afluencia.",
+                entregable: "Certificación de emisión radial comunitaria y registro fotográfico de material fijado.",
+                programada: "SI",
+                trimestre: "Q2",
+                fechaLimite: "2026-06-30",
+                metaProg: 2,
+                actEjec: 2,
+                pobMeta: 300,
+                pobInterv: 315,
+                estado: "Completado",
+                archivos: []
+            },
+            {
+                id: 4,
+                area: "1. Deberes y Derechos",
+                actividad: "Divulgación de la Ruta y Flujograma ATEL",
+                impactoTema: "la clarificación del conducto de atención ante Accidentes de Trabajo y Enfermedades Laborales en la red pública",
+                descripcionTecnica: "Socialización del flujo de atención para casos de Accidentes de Trabajo y Enfermedades Laborales adaptado a los servicios de la red pública de salud para trabajadores sin ARL.",
+                entregable: "Flujograma municipal de atención ATEL adoptado y actas de socialización a la comunidad.",
+                programada: "SI",
+                trimestre: "Q2",
+                fechaLimite: "2026-06-30",
+                metaProg: 2,
+                actEjec: 2,
+                pobMeta: 80,
+                pobInterv: 85,
+                estado: "Completado",
+                archivos: []
+            },
+            {
+                id: 5,
+                area: "1. Deberes y Derechos",
+                actividad: "Sensibilización en afiliación al SGSSS e inclusión digna",
+                impactoTema: "el fomento de la afiliación voluntaria a la seguridad social y el incentivo a la formalización con microempresarios",
+                descripcionTecnica: "Reuniones con comerciantes e informales para promover la vinculación a la seguridad social y sensibilizar a empleadores formales sobre beneficios tributarios.",
+                entregable: "Actas de concertación con el sector empresarial y registros de orientación en seguridad social.",
+                programada: "SI",
+                trimestre: "Q3",
+                fechaLimite: "2026-09-30",
+                metaProg: 2,
+                actEjec: 1,
+                pobMeta: 60,
+                pobInterv: 40,
+                estado: "En Proceso",
+                archivos: []
+            },
+            {
+                id: 6,
+                area: "2. Estilos de Vida y Entornos",
+                actividad: "Plan de capacitación adaptado (4 Módulos de Riesgo)",
+                impactoTema: "el fortalecimiento de competencias operativas en la prevención de riesgos ergonómicos, auditivos, psicosociales y químicos",
+                descripcionTecnica: "Capacitaciones cortas dirigidas a la economía popular en 4 frentes: Riesgo Biomecánico, Auditivo, Psicosocial y manejo de Agentes Cancerígenos.",
+                entregable: "Memorias técnicas, presentaciones y planillas de asistencia desagregadas por módulo.",
+                programada: "SI",
+                trimestre: "Q2",
+                fechaLimite: "2026-06-30",
+                metaProg: 4,
+                actEjec: 3,
+                pobMeta: 100,
+                pobInterv: 75,
+                estado: "En Proceso",
+                archivos: []
+            },
+            {
+                id: 7,
+                area: "2. Estilos de Vida y Entornos",
+                actividad: "Implementación de estrategias de hábitos saludables",
+                impactoTema: "la promoción del bienestar físico, descanso activo e hidratación en las jornadas diarias de la economía popular",
+                descripcionTecnica: "Jornadas prácticas de pausas activas grupales, hábitos de hidratación y nutrición adecuada en los puestos de trabajo informales.",
+                entregable: "Registros fotográficos y planillas de control de asistencia a pausas saludables.",
+                programada: "SI",
+                trimestre: "Q1",
+                fechaLimite: "2026-03-31",
+                metaProg: 6,
+                actEjec: 6,
+                pobMeta: 150,
+                pobInterv: 160,
+                estado: "Completado",
+                archivos: []
+            },
+            {
+                id: 8,
+                area: "2. Estilos de Vida y Entornos",
+                actividad: "Caracterización SURVEY123 y validación ADRES",
+                impactoTema: "el diagnóstico socio-demográfico estandarizado y el cruce del estado real de afiliación en salud de los trabajadores",
+                descripcionTecnica: "Encuestas digitales en terreno sobre unidades informales mediante la aplicación SURVEY123 y posterior verificación de la condición de aseguramiento en la base de ADRES.",
+                entregable: "Base de datos consolidada exportada de SURVEY123 y reporte de validación en ADRES.",
+                programada: "SI",
+                trimestre: "Q1",
+                fechaLimite: "2026-03-31",
+                metaProg: 1,
+                actEjec: 1,
+                pobMeta: 120,
+                pobInterv: 120,
+                estado: "Completado",
+                archivos: []
+            },
+            {
+                id: 9,
+                area: "2. Estilos de Vida y Entornos",
+                actividad: "Análisis de Puestos de Trabajo (APT) priorizados",
+                impactoTema: "la identificación técnica directa de factores biomecánicos y ambientales en oficios críticos de alta exigencia física",
+                descripcionTecnica: "Evaluación técnica de las condiciones ergonómicas y peligros en sectores informales priorizados (carpinterías, modisterías, plazas de mercado).",
+                entregable: "Informes técnicos de Análisis de Puestos de Trabajo firmados con recomendaciones.",
+                programada: "SI",
+                trimestre: "Q3",
+                fechaLimite: "2026-09-30",
+                metaProg: 3,
+                actEjec: 2,
+                pobMeta: 15,
+                pobInterv: 10,
+                estado: "En Proceso",
+                archivos: []
+            },
+            {
+                id: 10,
+                area: "2. Estilos de Vida y Entornos",
+                actividad: "Mitigación del riesgo por cambio climático (Rural/Migrante)",
+                impactoTema: "la reducción de vulnerabilidades ante radiación UV, estrés térmico y vectores en trabajadores del campo y migrantes",
+                descripcionTecnica: "Sensibilización en prevención de estrés térmico, radiación UV, agroquímicos y vectores, vinculando al 100% de la población rural, campesina e informal migrante.",
+                entregable: "Listados de asistencia diferenciados y reporte de acciones preventivas en campo.",
+                programada: "SI",
+                trimestre: "Q2",
+                fechaLimite: "2026-06-30",
+                metaProg: 3,
+                actEjec: 3,
+                pobMeta: 90,
+                pobInterv: 98,
+                estado: "Completado",
+                archivos: []
+            },
+            {
+                id: 11,
+                area: "3. Trabajo Protegido Adolescente",
+                actividad: "Erradicación de Trabajo Infantil y Trabajo Protegido",
+                impactoTema: "la protección integral de menores de edad y la prevención de la vinculación de adolescentes a oficios peligrosos",
+                descripcionTecnica: "Campañas sensibilizadoras dirigidas a escuelas, padres de familia y comercios sobre edad permitida de trabajo, prohibición de trabajos peligrosos y rutas de protección.",
+                entregable: "Actas de reunión con instituciones educativas, asociaciones de padres y material entregado.",
+                programada: "SI",
+                trimestre: "Q2",
+                fechaLimite: "2026-06-30",
+                metaProg: 2,
+                actEjec: 2,
+                pobMeta: 70,
+                pobInterv: 72,
+                estado: "Completado",
+                archivos: []
+            },
+            {
+                id: 12,
+                area: "4. Diálogo Social y Redes",
+                actividad: "Conformación/activación Red de Apoyo Municipal SST",
+                impactoTema: "la institucionalización de la mesa de concertación intersectorial para la gobernanza local de la salud laboral",
+                descripcionTecnica: "Formalización de la Red Municipal de Salud Laboral (en cumplimiento del Art. 17 Decreto 16 de 1997) articulando Alcaldía, ESE, UMATA y líderes de la economía popular.",
+                entregable: "Acta de constitución oficial de la Red de Apoyo Municipal y cronograma de sesiones.",
+                programada: "SI",
+                trimestre: "Q1",
+                fechaLimite: "2026-03-31",
+                metaProg: 1,
+                actEjec: 1,
+                pobMeta: 20,
+                pobInterv: 22,
+                estado: "Completado",
+                archivos: []
+            },
+            {
+                id: 13,
+                area: "5. Vigilancia SIVISALA",
+                actividad: "Vigilancia y autocuidado en uso de plaguicidas",
+                impactoTema: "la prevención de intoxicaciones agudas y la adopción de prácticas de protección respiratoria e higiene en el sector agrícola",
+                descripcionTecnica: "Asistencia técnica directa en fincas agrícolas sobre almacenamiento seguro, uso de EPP respiratorio e impermeable, triple lavado y ruta de reporte de intoxicaciones.",
+                entregable: "Listas de chequeo de almacenamiento de sustancias químicas e informes de visitas de asistencia técnica.",
+                programada: "SI",
+                trimestre: "Q3",
+                fechaLimite: "2026-09-30",
+                metaProg: 4,
+                actEjec: 4,
+                pobMeta: 80,
+                pobInterv: 85,
+                estado: "Completado",
+                archivos: []
+            },
+            {
+                id: 14,
+                area: "5. Vigilancia SIVISALA",
+                actividad: "Notificación y seguimiento de intoxicaciones agudas",
+                impactoTema: "la oportunidad en el reporte epidemiológico y la investigación oportuna de eventos químicos en la red hospitalaria",
+                descripcionTecnica: "Verificación del flujo de notificación inmediata ante la E.S.E. municipal para casos sospechosos de intoxicación por plaguicidas u otras sustancias químicas de uso laboral.",
+                entregable: "Fichas epidemiológicas SIVIGILA/SIVISALA revisadas e informe de investigación del evento.",
+                programada: "SI",
+                trimestre: "Q4",
+                fechaLimite: "2026-11-30",
+                metaProg: 2,
+                actEjec: 2,
+                pobMeta: 10,
+                pobInterv: 10,
+                estado: "Completado",
+                archivos: []
+            },
+            {
+                id: 15,
+                area: "6. Participación Comunitaria",
+                actividad: "Mapeo participativo de riesgos sociolaborales",
+                impactoTema: "la identificación comunitaria de puntos calientes de accidentalidad y factores de peligro mediante cartografía social",
+                descripcionTecnica: "Cartografía social interactiva desarrollada con la comunidad trabajadora informal para identificar puntos calientes de accidentes y exposición a peligros.",
+                entregable: "Mapas comunitarios de riesgo construidos y matriz de hallazgos prioritarios.",
+                programada: "SI",
+                trimestre: "Q3",
+                fechaLimite: "2026-09-30",
+                metaProg: 2,
+                actEjec: 1,
+                pobMeta: 50,
+                pobInterv: 30,
+                estado: "En Proceso",
+                archivos: []
+            },
+            {
+                id: 16,
+                area: "6. Participación Comunitaria",
+                actividad: "Redes comunitarias de vigías en SST",
+                impactoTema: "el empoderamiento del liderazgo comunitario para la alerta temprana de riesgos laborales en el territorio",
+                descripcionTecnica: "Elección y formación de líderes informales como 'Vigías Comunitarios de Salud Laboral' para canalizar inquietudes y reportes de la comunidad ante las autoridades.",
+                entregable: "Directorio de vigías comunitarios constituidos y actas de capacitación técnica.",
+                programada: "SI",
+                trimestre: "Q4",
+                fechaLimite: "2026-12-15",
+                metaProg: 1,
+                actEjec: 0,
+                pobMeta: 15,
+                pobInterv: 0,
+                estado: "No Iniciado",
+                archivos: []
+            },
+            {
+                id: 17,
+                area: "7. Evaluación e Inspección",
+                actividad: "Asistencia técnica e inspección a entornos informales",
+                impactoTema: "el acompañamiento pedagógico en terreno para el mejoramiento continuo de las condiciones de seguridad en talleres y comercios",
+                descripcionTecnica: "Visitas pedagógicas periódicas de inspección preventiva, evaluando el cumplimiento de normas mínimas de seguridad en talleres, microempresas e informales.",
+                entregable: "Informes consolidados de visitas de inspección técnica con planes de mejora concertados.",
+                programada: "SI",
+                trimestre: "Q4",
+                fechaLimite: "2026-12-15",
+                metaProg: 5,
+                actEjec: 3,
+                pobMeta: 50,
+                pobInterv: 35,
+                estado: "En Proceso",
+                archivos: []
+            }
+        ];
+
+async function migrar() {
+
+    try {
+
+        for (const actividad of actividadesData) {
+
+            await setDoc(
+
+                doc(
+                    db,
+                    "Actividades",
+                    `actividad${actividad.id}`
+                ),
+
+                actividad
+
+            );
+
+        }
+
+        document.body.innerHTML +=
+            "<h2 style='color:green'>Migración completada correctamente ✅</h2>";
+
+    } catch(error){
+
+        document.body.innerHTML +=
+            "<h2 style='color:red'>Error en migración ❌</h2>";
+
+        document.body.innerHTML +=
+            "<pre>" + error.message + "</pre>";
+
+        console.error(error);
+
+    }
+
+}
+
+migrar();
+
+</script>
+
+</body>
+</html>

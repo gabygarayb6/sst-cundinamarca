@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Verificar Firebase</title>
+</head>
+
+<body>
+
+<h1>Verificando actividades...</h1>
+
+<script type="module">
+
+import {
+    obtenerActividades
+}
+from "./js/firebase/firebaseService.js";
+try {
+
+    const actividades =
+        await obtenerActividades();
+
+    document.body.innerHTML +=
+        "<h2>" +
+        actividades.length +
+        " actividades encontradas</h2>";
+
+    document.body.innerHTML +=
+        "<pre>" +
+        JSON.stringify(
+            actividades[0],
+            null,
+            2
+        ) +
+        "</pre>";
+
+} catch(error){
+
+    document.body.innerHTML +=
+        "<h2 style='color:red'>ERROR</h2>";
+
+    document.body.innerHTML +=
+        "<pre>" +
+        error.message +
+        "</pre>";
+
+}
+
+</script>
+
+</body>
+</html>

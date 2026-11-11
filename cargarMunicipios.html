@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Cargar Municipios</title>
+</head>
+
+<body>
+
+<h1>Cargando municipios...</h1>
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+
+import {
+    getFirestore,
+    doc,
+    setDoc,
+    Timestamp
+}
+from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+const firebaseConfig = {
+
+  apiKey: "AIzaSyAM9WixjYzGJ57Twd79tm-DPlwwrfoZpk0",
+  authDomain: "saludlaboral-5b944.firebaseapp.com",
+  projectId: "saludlaboral-5b944",
+  storageBucket: "saludlaboral-5b944.firebasestorage.app",
+  messagingSenderId: "797162139743",
+  appId: "1:797162139743:web:3c8981d12de7e5085eabea"
+
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const municipios = [
+
+["Agua de Dios","Alto Magdalena"],
+["Albán","Gualivá"],
+["Anapoima","Tequendama"],
+["Anolaima","Tequendama"],
+["Apulo","Tequendama"],
+["Arbeláez","Sumapaz"],
+["Beltrán","Magdalena Centro"],
+["Bituima","Gualivá"],
+["Bojacá","Sabana Occidente"],
+["Cabrera","Sumapaz"],
+["Cachipay","Tequendama"],
+["Cajicá","Sabana Centro"],
+["Caparrapí","Bajo Magdalena"],
+["Caqueza","Oriente"],
+["Carmen de Carupa","Ubaté"],
+["Chaguaní","Magdalena Centro"],
+["Chía","Sabana Centro"],
+["Chipaque","Oriente"],
+["Choachí","Oriente"],
+["Chocontá","Almeidas"],
+["Cogua","Sabana Centro"],
+["Cota","Sabana Centro"],
+["Cucunubá","Ubaté"],
+["El Colegio","Tequendama"],
+["El Peñón","Rionegro"],
+["Facatativá","Sabana Occidente"],
+["Fómeque","Oriente"],
+["Fosca","Oriente"],
+["Funza","Sabana Occidente"],
+["Fúquene","Ubaté"],
+["Fusagasugá","Sumapaz"],
+["Gachalá","Guavio"],
+["Gachancipá","Sabana Centro"],
+["Gachetá","Guavio"],
+["Gama","Guavio"],
+["Girardot","Alto Magdalena"],
+["Granada","Sumapaz"],
+["Guachetá","Ubaté"],
+["Guaduas","Bajo Magdalena"],
+["Guasca","Guavio"],
+["Guataquí","Alto Magdalena"],
+["Guatavita","Guavio"],
+["Guayabal de Síquima","Tequendama"],
+["Guayabetal","Oriente"],
+["Gutiérrez","Oriente"],
+["Jerusalén","Alto Magdalena"],
+["Junín","Guavio"],
+["La Calera","Sabana Centro"],
+["La Mesa","Tequendama"],
+["La Palma","Rionegro"],
+["La Peña","Gualivá"],
+["La Vega","Gualivá"],
+["Lenguazaque","Ubaté"],
+["Machetá","Almeidas"],
+["Madrid","Sabana Occidente"],
+["Manta","Almeidas"],
+["Medina","Medina"],
+["Mosquera","Sabana Occidente"],
+["Nariño","Alto Magdalena"],
+["Nemocón","Sabana Centro"],
+["Nilo","Alto Magdalena"],
+["Nimaima","Gualivá"],
+["Nocaima","Gualivá"],
+["Pacho","Rionegro"],
+["Paime","Rionegro"],
+["Pandi","Sumapaz"],
+["Paratebueno","Medina"],
+["Pasca","Sumapaz"],
+["Puerto Salgar","Bajo Magdalena"],
+["Pulí","Magdalena Centro"],
+["Quebradanegra","Bajo Magdalena"],
+["Quetame","Oriente"],
+["Quipile","Tequendama"],
+["Ricaurte","Alto Magdalena"],
+["San Antonio del Tequendama","Tequendama"],
+["San Bernardo","Sumapaz"],
+["San Cayetano","Rionegro"],
+["San Francisco","Gualivá"],
+["San Juan de Rioseco","Magdalena Centro"],
+["Sasaima","Gualivá"],
+["Sesquilé","Almeidas"],
+["Sibaté","Soacha"],
+["Silvania","Sumapaz"],
+["Simijaca","Ubaté"],
+["Soacha","Soacha"],
+["Sopó","Sabana Centro"],
+["Subachoque","Sabana Occidente"],
+["Suesca","Almeidas"],
+["Supatá","Gualivá"],
+["Susa","Ubaté"],
+["Sutatausa","Ubaté"],
+["Tabio","Sabana Centro"],
+["Tausa","Ubaté"],
+["Tena","Tequendama"],
+["Tenjo","Sabana Centro"],
+["Tibacuy","Sumapaz"],
+["Tibirita","Almeidas"],
+["Tocaima","Alto Magdalena"],
+["Tocancipá","Sabana Centro"],
+["Topaipí","Rionegro"],
+["Ubalá","Guavio"],
+["Ubaque","Oriente"],
+["Ubaté","Ubaté"],
+["Une","Oriente"],
+["Útica","Gualivá"],
+["Venecia","Sumapaz"],
+["Vergara","Gualivá"],
+["Vianí","Magdalena Centro"],
+["Villagómez","Rionegro"],
+["Villapinzón","Almeidas"],
+["Villeta","Gualivá"],
+["Viotá","Tequendama"],
+["Yacopí","Rionegro"],
+["Zipacón","Sabana Occidente"],
+["Zipaquirá","Sabana Centro"]
+
+];
+
+async function cargarMunicipios() {
+
+    for (const [nombre, provincia] of municipios) {
+
+        await setDoc(
+
+            doc(
+                db,
+                "Municipios",
+                nombre
+            ),
+
+            {
+
+                nombre,
+                provincia,
+
+                departamento:
+                    "Cundinamarca",
+
+                estado:
+                    "Activo",
+
+                totalActividades:
+                    17,
+
+                totalCompletadas:
+                    0,
+
+                avanceGeneral:
+                    0,
+
+                fechaRegistro:
+                    Timestamp.now(),
+
+                ultimaActualizacion:
+                    Timestamp.now(),
+
+                referente:
+                    "Profesional SST",
+
+                usuariosAsignados: []
+
+            }
+
+        );
+
+    }
+
+    document.body.innerHTML +=
+        "<h2>Municipios cargados correctamente ✅</h2>";
+
+}
+
+cargarMunicipios();
+
+</script>
+
+</body>
+</html>

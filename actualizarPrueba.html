@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Actualizar Firebase</title>
+</head>
+
+<body>
+
+<button id="actualizar">
+Actualizar Actividad
+</button>
+
+<script type="module">
+
+import {
+  obtenerActividades,
+  actualizarActividad
+}
+from "./firebaseService.js";
+
+document
+.getElementById("actualizar")
+.addEventListener(
+"click",
+async () => {
+
+    const actividades =
+    await obtenerActividades();
+
+    const primera =
+    actividades[0];
+
+    await actualizarActividad(
+        primera.firebaseId,
+        "estado",
+        "Completado"
+    );
+
+    alert(
+      "Actualizado correctamente"
+    );
+
+});
+
+</script>
+
+</body>
+</html>
